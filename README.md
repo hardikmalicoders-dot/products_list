@@ -66,6 +66,25 @@ lib/
 
 ---
 
+## 🧪 BLoC Unit Tests
+
+Unit tests are written using `bloc_test` and `mocktail` located under `test/bloc/`:
+
+```
+test/
+└── bloc/
+    ├── auth_bloc_test.dart      # Tests session check, login flow, errors & logout
+    └── product_bloc_test.dart   # Tests product fetching, empty state, errors & reset
+```
+
+### Running Unit Tests
+To run all BLoC unit tests:
+```bash
+flutter test
+```
+
+---
+
 ## 🔒 Security Considerations
 
 - **Secure Storage**: Tokens (`accessToken`, `refreshToken`) are kept out of plain text / `SharedPreferences` and stored in platform-specific secure enclaves using `flutter_secure_storage`.
@@ -87,7 +106,7 @@ lib/
 
 ---
 
-## 🧪 Test Credentials
+## 🔑 Test Credentials
 
 - **Username**: `emilys`
 - **Password**: `emilyspass`

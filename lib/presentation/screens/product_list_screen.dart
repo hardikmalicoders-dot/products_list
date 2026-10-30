@@ -8,7 +8,6 @@ import '../../bloc/product/product_event.dart';
 import '../../bloc/product/product_state.dart';
 import '../widgets/product_card.dart';
 import '../widgets/state_views.dart';
-import 'login_screen.dart';
 import 'product_detail_screen.dart';
 
 class ProductListScreen extends StatefulWidget {
@@ -98,9 +97,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
       context.read<AuthBloc>().add(const AuthLogoutRequested());
       context.read<ProductBloc>().add(const ProductReset());
 
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const LoginScreen()),
-      );
+      Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
     }
   }
 
@@ -301,7 +298,10 @@ class _ProductListScreenState extends State<ProductListScreen> {
                     onTap: () {
                       Navigator.of(context).push(
                         MaterialPageRoute(
-                          builder: (_) => ProductDetailScreen(product: product),
+                          builder: (_) => ProductDetailScreen(
+                            productId: product.id,
+                            initialProduct: product,
+                          ),
                         ),
                       );
                     },

@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'bloc/auth/auth_bloc.dart';
-import 'bloc/auth/auth_event.dart';
-import 'bloc/auth/auth_state.dart';
 import 'bloc/product/product_bloc.dart';
 import 'core/theme/app_theme.dart';
 import 'presentation/screens/login_screen.dart';
 import 'presentation/screens/product_list_screen.dart';
-import 'presentation/widgets/state_views.dart';
+import 'presentation/screens/splash_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -22,7 +20,7 @@ class MyApp extends StatelessWidget {
     return MultiBlocProvider(
       providers: [
         BlocProvider<AuthBloc>(
-          create: (_) => AuthBloc()..add(const AuthCheckRequested()),
+          create: (_) => AuthBloc(),
         ),
         BlocProvider<ProductBloc>(
           create: (_) => ProductBloc(),
@@ -32,31 +30,13 @@ class MyApp extends StatelessWidget {
         title: 'Products Store',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.lightTheme,
-        home: const AppRoot(),
+        initialRoute: '/',
+        routes: {
+          '/': (context) => const SplashScreen(),
+          '/login': (context) => const LoginScreen(),
+          '/products': (context) => const ProductListScreen(),
+        },
       ),
-    );
-  }
-}
-
-class AppRoot extends StatelessWidget {
-  const AppRoot({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return BlocBuilder<AuthBloc, AuthState>(
-      builder: (context, state) {
-        if (state is AuthInitial) {
-          return const Scaffold(
-            body: LoadingView(message: 'Initializing app...'),
-          );
-        }
-
-        if (state is AuthAuthenticated) {
-          return const ProductListScreen();
-        }
-
-        return const LoginScreen();
-      },
     );
   }
 }

@@ -1,15 +1,21 @@
 import 'package:flutter/material.dart';
-
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../bloc/auth/auth_bloc.dart';
+import '../../bloc/auth/auth_state.dart';
 import '../../data/models/product_model.dart';
+import '../../data/repositories/product_repository.dart';
 import '../widgets/rating_stars.dart';
 import '../widgets/review_tile.dart';
+import '../widgets/state_views.dart';
 
 class ProductDetailScreen extends StatefulWidget {
-  final Product product;
+  final int productId;
+  final Product? initialProduct;
 
   const ProductDetailScreen({
     super.key,
-    required this.product,
+    required this.productId,
+    this.initialProduct,
   });
 
   @override
@@ -17,13 +23,20 @@ class ProductDetailScreen extends StatefulWidget {
 }
 
 class _ProductDetailScreenState extends State<ProductDetailScreen> {
+  final ProductRepository _productRepository = ProductRepository();
   int _selectedImageIndex = 0;
   late final PageController _pageController;
+
+  Product? _product;
+  bool _isLoading = false;
+  String? _errorMessage;
 
   @override
   void initState() {
     super.initState();
     _pageController = PageController();
+    _product = widget.initialProduct;
+    _fetchProductDetail();
   }
 
   @override
@@ -32,20 +45,74 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     super.dispose();
   }
 
-  // Helper method to get all images for the product, including thumbnail if available
-  List<String> get _allImages {
-    if (widget.product.images.isNotEmpty) {
-      return widget.product.images;
-    } else if (widget.product.thumbnail.isNotEmpty) {
-      return [widget.product.thumbnail];
+  Future<void> _fetchProductDetail() async {
+    if (_product == null) {
+      setState(() {
+        _isLoading = true;
+        _errorMessage = null;
+      });
+    }
+
+    try {
+      final authState = context.read<AuthBloc>().state;
+      String? token;
+      if (authState is AuthAuthenticated) {
+        token = authState.accessToken;
+      }
+
+      final freshProduct = await _productRepository.getProductById(
+        widget.productId,
+        token: token,
+      );
+
+      if (mounted) {
+        setState(() {
+          _product = freshProduct;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          if (_product == null) {
+            _errorMessage = e.toString();
+          }
+        });
+      }
+    }
+  }
+
+  List<String> _getImages(Product product) {
+    if (product.images.isNotEmpty) {
+      return product.images;
+    } else if (product.thumbnail.isNotEmpty) {
+      return [product.thumbnail];
     }
     return [];
   }
 
   @override
   Widget build(BuildContext context) {
-    final product = widget.product;
-    final images = _allImages;
+    if (_isLoading && _product == null) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Product Details')),
+        body: const LoadingView(message: 'Loading product details...'),
+      );
+    }
+
+    if (_errorMessage != null && _product == null) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Product Details')),
+        body: ErrorView(
+          message: _errorMessage!,
+          onRetry: _fetchProductDetail,
+        ),
+      );
+    }
+
+    final product = _product!;
+    final images = _getImages(product);
 
     return Scaffold(
       appBar: AppBar(
@@ -119,7 +186,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   ],
                 ),
               ),
-              // Page indicator dots / thumbnails
+              // Page indicator dots
               if (images.length > 1) ...[
                 const SizedBox(height: 12),
                 Row(
@@ -170,7 +237,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                             fontSize: 11,
                           ),
                         ),
-                        backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
+                        backgroundColor: Theme.of(context).primaryColor.withValues(alpha: 0.1),
                         side: BorderSide.none,
                       ),
                       const SizedBox(width: 8),
@@ -226,7 +293,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.blue.shade50.withOpacity(0.5),
+                      color: Colors.blue.shade50.withValues(alpha: 0.5),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(color: Colors.blue.shade100),
                     ),
@@ -389,9 +456,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.12),
+        color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Text(
         text,
